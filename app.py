@@ -70,8 +70,21 @@ class Object:
     def draw_balance(self):
         if self.closed and self.polygon_centroid_coord:
             cx = int(self.polygon_centroid_coord[0])
-            bottom = max(y for _, y in self.vertices)   # lowest point on screen (y grows downward)
             # triangle fulcrum with its tip at the bottom of the shape
+            # find connection point at specific x
+
+            # two lowest vertices on screen (largest y)
+            bottom_vertex1, bottom_vertex2 = sorted(self.vertices, key=lambda v: v[1], reverse=True)[:2]
+
+            # find y that corresponds with cx
+            if bottom_vertex1[0] == bottom_vertex2[0]:
+                bottom = max(bottom_vertex1[1], bottom_vertex2[1])
+            else:
+                m = (bottom_vertex1[1] - bottom_vertex2[1]) / (bottom_vertex1[0] - bottom_vertex2[0])
+                b = bottom_vertex1[1] - m * bottom_vertex1[0]
+                bottom = m*cx + b
+                
+
             tip = (cx, bottom)
             left = (cx - 20, bottom + 40)
             right = (cx + 20, bottom + 40)
