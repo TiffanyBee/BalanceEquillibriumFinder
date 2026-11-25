@@ -82,7 +82,7 @@ class Object:
             else:
                 m = (bottom_vertex1[1] - bottom_vertex2[1]) / (bottom_vertex1[0] - bottom_vertex2[0])
                 b = bottom_vertex1[1] - m * bottom_vertex1[0]
-                bottom = m*cx + b
+                bottom = m*cx + b + 3
                 
 
             tip = (cx, bottom)
@@ -90,8 +90,77 @@ class Object:
             right = (cx + 20, bottom + 40)
             pygame.draw.polygon(screen, (255, 0, 0), [tip, left, right])
 
+
+class Guesser:
+    def __init__(self):
+        self.guessing = False
+        self.guessed = False
+        self.guesses = 0
+        self.guess = 0
+
+    def draw_guessing(self):
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        if self.guessing:
+            bottom_vertex1, bottom_vertex2 = sorted(object.vertices, key=lambda v: v[1], reverse=True)[:2]
+
+            if bottom_vertex1[0] < bottom_vertex2[0]:
+                left_vertex, right_vertex = bottom_vertex1, bottom_vertex2
+            else:
+                left_vertex, right_vertex = bottom_vertex2, bottom_vertex1
+
+
+            if right_vertex[0] == left_vertex[0]:
+                    bottom = max(right_vertex[1], left_vertex[1])
+            else:
+                if mouse_x < left_vertex[0]:
+                    mouse_x = left_vertex[0]
+                elif mouse_x > right_vertex[0]:
+                    mouse_x = right_vertex[0]
+
+                m = (bottom_vertex1[1] - bottom_vertex2[1]) / (bottom_vertex1[0] - bottom_vertex2[0])
+                b = bottom_vertex1[1] - m * bottom_vertex1[0]
+                bottom = m * mouse_x + b + 2
+
+            tip = (mouse_x, bottom)
+            left = (mouse_x - 20, bottom + 40)
+            right = (mouse_x + 20, bottom + 40)
+            pygame.draw.polygon(screen, (100, 0, 0), [tip, left, right])
+
+    def draw_guessed(self):
+        mouse_x = self.guess
+        if self.guessed:
+            bottom_vertex1, bottom_vertex2 = sorted(object.vertices, key=lambda v: v[1], reverse=True)[:2]
+
+            if bottom_vertex1[0] < bottom_vertex2[0]:
+                left_vertex, right_vertex = bottom_vertex1, bottom_vertex2
+            else:
+                left_vertex, right_vertex = bottom_vertex2, bottom_vertex1
+            
+            if right_vertex[0] == left_vertex[0]:
+                bottom = max(right_vertex[1], left_vertex[1])
+            else:
+                if mouse_x < left_vertex[0]:
+                    mouse_x = left_vertex[0]
+                elif mouse_x > right_vertex[0]:
+                    mouse_x = right_vertex[0]
+            
+                m = (bottom_vertex1[1] - bottom_vertex2[1]) / (bottom_vertex1[0] - bottom_vertex2[0])
+                b = bottom_vertex1[1] - m * bottom_vertex1[0]
+                bottom = m * mouse_x + b + 2
+            
+            tip = (mouse_x, bottom)
+            left = (mouse_x - 20, bottom + 40)
+            right = (mouse_x + 20, bottom + 40)
+            pygame.draw.polygon(screen, (100, 0, 0), [tip, left, right])
+            
+
+            
+
+
+
 clock = pygame.time.Clock()
 object = Object()
+guesser = Guesser()
 run = True
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Balance Equillibrium Finder")
@@ -100,17 +169,27 @@ while run:
         if event.type == pygame.QUIT:
            run = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1 :
+            if event.button == 1 and not object.closed:
                 object.add_vertex(*event.pos)
-                
+            elif event.button == 1 and guesser.guessing:
+                guesser.guessing = False
+                guesser.guessed = True
+                guesser.guess = pygame.mouse.get_pos()[0]
+
+
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 object.closed = True
                 object.polygon_centroid_coord = object.calculate_centroid_coord()
+            if event.key == pygame.K_g and object.closed:
+                guesser.guessing = True
+                guesser.guesses += 1
 
     screen.fill((0, 0, 0))
     object.draw_object()
     object.draw_balance()
+    guesser.draw_guessing()
+    guesser.draw_guessed()
     pygame.display.flip()
     clock.tick(60)
 pygame.quit()
